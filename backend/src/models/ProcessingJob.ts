@@ -1,0 +1,2 @@
+import { Schema, model, Types } from 'mongoose';
+const schema=new Schema({userId:{type:Types.ObjectId,ref:'User',required:true,index:true},documentId:{type:Types.ObjectId,ref:'Document',required:true},algorithm:{type:String,required:true},jobStatus:{type:String,enum:['Pending','Processing','Completed','Failed'],required:true},startTime:Date,completionTime:Date,errorMessage:String},{timestamps:true}); export const ProcessingJob=model('ProcessingJob',schema);

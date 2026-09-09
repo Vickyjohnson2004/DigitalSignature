@@ -1,0 +1,194 @@
+# ============================================
+# Dependencies
+# ============================================
+
+node_modules/
+**/node_modules/
+
+
+# ============================================
+# Environment Variables / Secrets
+# ============================================
+
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Environment files with any suffix
+.env.*
+
+# But allow example environment files
+!.env.example
+
+
+# ============================================
+# Build Output
+# ============================================
+
+dist/
+build/
+out/
+
+# Next.js
+.next/
+.next/*
+.vercel/
+
+
+# ============================================
+# TypeScript
+# ============================================
+
+*.tsbuildinfo
+
+
+# ============================================
+# Logs
+# ============================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ============================================
+# Testing / Coverage
+# ============================================
+
+coverage/
+.nyc_output/
+*.lcov
+
+
+# ============================================
+# Cache
+# ============================================
+
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+
+# ============================================
+# Vite
+# ============================================
+
+.vite/
+
+
+# ============================================
+# OS Files
+# ============================================
+
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+
+# ============================================
+# IDE / Editors
+# ============================================
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+.idea/
+*.iml
+
+*.swp
+*.swo
+
+
+# ============================================
+# Temporary Files
+# ============================================
+
+tmp/
+temp/
+*.tmp
+*.temp
+
+
+# ============================================
+# Database / Local Data
+# ============================================
+
+*.sqlite
+*.sqlite3
+*.db
+
+mongodb-data/
+data/
+
+
+# ============================================
+# Certificates / Private Keys
+# ============================================
+
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Local SSL certificates
+certificates/
+certs/
+
+
+# ============================================
+# Generated Cryptographic Files
+# ============================================
+
+# Private/public keys generated during development
+keys/
+generated-keys/
+
+# Signature test output
+signatures/
+generated-signatures/
+
+# Benchmark output generated locally
+benchmark-results/
+benchmark-output/
+
+
+# ============================================
+# Uploads
+# ============================================
+
+uploads/
+storage/
+
+
+# ============================================
+# Vercel
+# ============================================
+
+.vercel/
+
+
+# ============================================
+# Miscellaneous
+# ============================================
+
+*.bak
+*.old
+*.orig
+*.rej
+
+.Docker/

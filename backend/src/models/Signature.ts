@@ -1,0 +1,2 @@
+import { Schema, model, Types } from 'mongoose';
+const schema=new Schema({userId:{type:Types.ObjectId,ref:'User',required:true,index:true},documentId:{type:Types.ObjectId,ref:'Document',required:true,index:true},algorithm:{type:String,required:true,index:true},signatureValue:{type:String,required:true},publicKey:{type:String,required:true},signatureSize:{type:Number,required:true},keySize:{type:Number,required:true},generatedAt:{type:Date,default:Date.now}}); schema.index({userId:1,generatedAt:-1}); export const Signature=model('Signature',schema);
