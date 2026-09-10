@@ -28,6 +28,15 @@ app.use(
   }),
 );
 
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDb();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/", (_req, res) =>
   res.json({ status: "ok", service: "digital-signature-suite-api" }),
 );
