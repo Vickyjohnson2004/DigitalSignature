@@ -1,1 +1,101 @@
-'use client';import {FormEvent,useState} from 'react';import {useRouter} from 'next/navigation';import Link from 'next/link';import {api,saveSession} from '../../lib/api';import {FiShield} from 'react-icons/fi';export default function Login(){const r=useRouter();const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');const [loading,setLoading]=useState(false);async function submit(e:FormEvent){e.preventDefault();setLoading(true);setError('');try{const {data}=await api.post('/auth/login',{email,password});saveSession(data);r.replace('/dashboard')}catch(e:any){setError(e.response?.data?.message||'Unable to sign in')}finally{setLoading(false)}}return <div className="min-h-screen grid lg:grid-cols-2"><section className="hidden lg:flex bg-slate-950 text-white p-14 flex-col justify-between"><div className="text-xl font-black">DigitalSignature Suite</div><div><div className="text-indigo-400 mb-3"><FiShield size={42}/></div><h1 className="text-5xl font-black leading-tight">Sign. Verify.<br/>Benchmark.</h1><p className="mt-5 text-slate-400 max-w-md">A unified workspace for document integrity and comparative analysis of RSA-PSS, DSA, ECDSA and Ed25519.</p></div><div className="text-xs text-slate-500">Secure cryptographic processing • Research-ready benchmarks</div></section><main className="flex items-center justify-center p-6"><form onSubmit={submit} className="w-full max-w-md card p-8"><h2 className="text-2xl font-black">Welcome back</h2><p className="text-slate-500 mt-2 mb-7">Sign in to your workspace.</p>{error&&<div className="mb-4 rounded-lg bg-red-50 text-red-700 p-3 text-sm">{error}</div>}<label className="text-sm font-semibold">Email<input className="input mt-2 mb-4" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label className="text-sm font-semibold">Password<input className="input mt-2 mb-6" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label><button className="btn btn-primary w-full" disabled={loading}>{loading?'Signing in…':'Sign in'}</button><p className="text-sm text-center mt-5 text-slate-500">No account? <Link className="text-indigo-600 font-bold" href="/register">Create one</Link></p></form></main></div>}
+"use client";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { api, saveSession } from "../../lib/api";
+import { FiShield } from "react-icons/fi";
+export default function Login() {
+  const r = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.post("/auth/login", { email, password });
+      saveSession(data);
+      r.replace("/dashboard");
+    } catch (e: any) {
+      setError(e.response?.data?.message || "Unable to sign in");
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2">
+      <section className="hidden lg:flex bg-slate-950 text-white p-14 flex-col justify-between">
+        <div className="text-xl font-black">DigitalSignature Suite</div>
+        <div>
+          <div className="text-indigo-400 mb-3">
+            <FiShield size={42} />
+          </div>
+          <h1 className="text-5xl font-black leading-tight">
+            Sign. Verify.
+            <br />
+            Benchmark.
+          </h1>
+          <p className="mt-5 text-slate-400 max-w-md">
+            A unified workspace for document integrity and comparative analysis
+            of RSA-PSS, DSA, ECDSA and Ed25519.
+          </p>
+        </div>
+        <div className="text-xs text-slate-500">
+          Secure cryptographic processing • Research-ready benchmarks
+        </div>
+      </section>
+      <main className="flex items-center justify-center p-6">
+        <form onSubmit={submit} className="w-full max-w-md card p-8">
+          <h2 className="text-2xl font-black">Welcome back</h2>
+          <p className="text-slate-500 mt-2 mb-7">Sign in to your workspace.</p>
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 text-red-700 p-3 text-sm">
+              {error}
+            </div>
+          )}
+          <label className="text-sm font-semibold">
+            Email
+            <input
+              className="input mt-2 mb-4"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label className="text-sm font-semibold">
+            Password
+            <div className="relative mt-2 mb-6">
+              <input
+                className="input w-full pr-14"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-indigo-600 hover:text-indigo-500"
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </label>
+          <button className="btn btn-primary w-full" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+          <p className="text-sm text-center mt-5 text-slate-500">
+            No account?{" "}
+            <Link className="text-indigo-600 font-bold" href="/register">
+              Create one
+            </Link>
+          </p>
+        </form>
+      </main>
+    </div>
+  );
+}
