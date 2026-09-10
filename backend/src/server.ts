@@ -28,7 +28,7 @@ app.use(
   }),
 );
 
-app.use(async (_req, _res, next) => {
+app.use("/api", async (_req, _res, next) => {
   try {
     await connectDb();
     next();
