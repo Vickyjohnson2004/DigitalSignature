@@ -35,11 +35,59 @@ A web application for comparing digital signature algorithms: RSA-PSS, DSA, ECDS
 - For production, replace the connection string and secret in `backend/.env` with real values.
 - Private keys are not persisted; signatures and public keys are stored as Base64 metadata.
 
+## How the project works
+
+This project is a full-stack digital signature comparison app built with a Node/Express backend and a Next.js frontend.
+
+### 1. User authentication
+
+- A user signs in through the frontend at `/login`.
+- The backend verifies the email and password and returns a JWT token.
+- That token is stored in local storage so protected pages can request data from the API.
+- The app redirects logged-in users to `/dashboard` automatically.
+
+### 2. Document workflow
+
+- Users upload a document to the backend through the documents API.
+- The backend stores the document metadata and prepares it for signing or verification.
+- The document is hashed and processed using the selected cryptographic algorithm.
+
+### 3. Signature generation
+
+- A user chooses a signing algorithm such as RSA-PSS, DSA, ECDSA, or Ed25519.
+- The backend generates a digital signature using the selected key material and document hash.
+- Signature records are saved in MongoDB along with metadata such as date, user, algorithm, and document reference.
+
+### 4. Signature verification
+
+- The system can verify whether a signature matches the original document and the public key.
+- Verification checks the signature against the document hash and confirms authenticity.
+- This helps compare how different algorithms behave under real validation conditions.
+
+### 5. Benchmarks and analytics
+
+- The app can run benchmark tests comparing signing and verification performance across algorithms.
+- Results are collected and displayed in the dashboard for analysis.
+- The admin section gives a higher-level view of system activity and usage.
+
+### 6. Backend architecture
+
+- The backend exposes REST routes for authentication, documents, signatures, benchmarks, dashboard statistics, and admin actions.
+- MongoDB stores users, documents, signatures, audit logs, and benchmark data.
+- The app uses JWT authentication, bcrypt hashing, and schema validation to protect the API.
+
+### 7. Frontend flow
+
+- The frontend is organized by pages like `/login`, `/dashboard`, `/documents`, `/sign`, `/verify`, `/benchmark`, and `/admin`.
+- The app uses route protection so only authenticated users can access protected screens.
+- Most of the UI is focused on interacting with the backend APIs and rendering comparison results.
+
 ## Production notes
 
 Use HTTPS, a managed MongoDB instance, strong secrets, a reverse proxy, object storage for larger documents, and a queue/worker for long benchmark jobs. This project intentionally uses the Node crypto library for secure algorithm comparisons rather than custom cryptographic primitives.
 
-#Login
+# Login
+
 Use:
 
 Email: admin@example.com
