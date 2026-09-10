@@ -1,1 +1,12 @@
-'use client';import {useEffect} from 'react';import {useRouter} from 'next/navigation';export function RequireAuth({children}:{children:React.ReactNode}){const router=useRouter();useEffect(()=>{if(!localStorage.getItem('dss_token'))router.replace('/login')},[router]);if(typeof window==='undefined'||!localStorage.getItem('dss_token'))return null;return <>{children}</>}
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+export function RequireAuth({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!localStorage.getItem("dss_token")) router.replace("/login");
+  }, [router]);
+  if (typeof window === "undefined" || !localStorage.getItem("dss_token"))
+    return null;
+  return <>{children}</>;
+}

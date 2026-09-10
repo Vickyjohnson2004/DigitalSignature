@@ -1,1 +1,71 @@
-'use client';import {useQuery} from '@tanstack/react-query';import {api} from '../../lib/api';import {Shell} from '../../components/Shell';import {RequireAuth} from '../../components/RequireAuth';export default function Admin(){const q=useQuery({queryKey:['admin'],queryFn:async()=>{const {data}=await api.get('/admin/overview');return data},retry:false});const logs=useQuery({queryKey:['logs'],queryFn:async()=>{const {data}=await api.get('/admin/audit-logs');return data.logs},retry:false});return <RequireAuth><Shell><h1 className="text-3xl font-black">Admin console</h1><p className="text-slate-500 mt-1 mb-6">System activity and operational oversight.</p>{q.isError?<div className="card p-6 text-red-700">Administrator access required.</div>:<><div className="grid md:grid-cols-3 gap-4 mb-6">{[['Users',q.data?.users],['Audit events',q.data?.audits],['Benchmarks',q.data?.benchmarks]].map(x=><div className="card p-5" key={x[0] as string}><div className="text-slate-500">{x[0]}</div><div className="text-3xl font-black mt-2">{x[1]??0}</div></div>)}</div><div className="card overflow-hidden"><div className="p-5 font-black border-b">Recent audit log</div><div className="overflow-auto"><table className="w-full text-sm"><tbody>{logs.data?.map((l:any)=><tr className="border-t" key={l._id}><td className="p-4 font-bold">{l.action}</td><td className="p-4">{l.resourceType||'—'}</td><td className="p-4 text-slate-500">{new Date(l.createdAt).toLocaleString()}</td></tr>)}</tbody></table></div></div></>}</Shell></RequireAuth>}
+"use client";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
+import { Shell } from "../../components/Shell";
+import { RequireAuth } from "../../components/RequireAuth";
+export default function Admin() {
+  const q = useQuery({
+    queryKey: ["admin"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/overview");
+      return data;
+    },
+    retry: false,
+  });
+  const logs = useQuery({
+    queryKey: ["logs"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/audit-logs");
+      return data.logs;
+    },
+    retry: false,
+  });
+  return (
+    <RequireAuth>
+      <Shell>
+        <h1 className="text-3xl font-black">Admin console</h1>
+        <p className="text-slate-500 mt-1 mb-6">
+          System activity and operational oversight.
+        </p>
+        {q.isError ? (
+          <div className="card p-6 text-red-700">
+            Administrator access required.
+          </div>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              {[
+                ["Users", q.data?.users],
+                ["Audit events", q.data?.audits],
+                ["Benchmarks", q.data?.benchmarks],
+              ].map((x) => (
+                <div className="card p-5" key={x[0] as string}>
+                  <div className="text-slate-500">{x[0]}</div>
+                  <div className="text-3xl font-black mt-2">{x[1] ?? 0}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card overflow-hidden">
+              <div className="p-5 font-black border-b">Recent audit log</div>
+              <div className="overflow-auto">
+                <table className="w-full text-sm">
+                  <tbody>
+                    {logs.data?.map((l: any) => (
+                      <tr className="border-t" key={l._id}>
+                        <td className="p-4 font-bold">{l.action}</td>
+                        <td className="p-4">{l.resourceType || "—"}</td>
+                        <td className="p-4 text-slate-500">
+                          {new Date(l.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </Shell>
+    </RequireAuth>
+  );
+}

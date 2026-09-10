@@ -1,1 +1,16 @@
-import './globals.css';import {ReactNode} from 'react';import {AppProviders} from '../components/AppProviders';export const metadata={title:'DigitalSignature Suite',description:'Compare digital signature algorithms'};export default function RootLayout({children}:{children:ReactNode}){return <html lang="en"><body><AppProviders>{children}</AppProviders></body></html>}
+import "./globals.css";
+import { ReactNode } from "react";
+import { AppProviders } from "../components/AppProviders";
+export const metadata = {
+  title: "DigitalSignature Suite",
+  description: "Compare digital signature algorithms",
+};
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
+    </html>
+  );
+}
