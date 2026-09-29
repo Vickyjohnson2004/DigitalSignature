@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
     console.error('[login]', e);
-    return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
+    const msg = e?.message?.includes('MONGODB_URI')
+      ? 'Database configuration error: MONGODB_URI is missing in Vercel environment variables.'
+      : (e?.message || 'An unexpected error occurred');
+    return NextResponse.json({ message: msg }, { status: 500 });
   }
 }
