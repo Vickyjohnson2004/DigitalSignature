@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const doc = await DocumentModel.findOne({ _id: documentId, userId: auth.user.id });
+    const docQuery = auth.user.role === 'admin'
+      ? { _id: documentId }
+      : { _id: documentId, userId: auth.user.id };
+    const doc = await DocumentModel.findOne(docQuery);
     if (!doc) return NextResponse.json({ message: 'Document not found' }, { status: 404 });
 
     job = await ProcessingJob.create({

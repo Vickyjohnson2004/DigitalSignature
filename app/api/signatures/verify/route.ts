@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isAdmin = auth.user.role === 'admin';
     const [sig, doc] = await Promise.all([
-      Signature.findOne({ _id: signatureId, userId: auth.user.id }),
-      DocumentModel.findOne({ _id: documentId, userId: auth.user.id }),
+      Signature.findOne(isAdmin ? { _id: signatureId } : { _id: signatureId, userId: auth.user.id }),
+      DocumentModel.findOne(isAdmin ? { _id: documentId } : { _id: documentId, userId: auth.user.id }),
     ]);
 
     if (!sig || !doc) {

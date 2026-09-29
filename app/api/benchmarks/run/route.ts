@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
 
     const count = Math.min(Math.max(Number(runs) || 100, 1), 500);
 
-    const doc = await DocumentModel.findOne({ _id: documentId, userId: auth.user.id });
+    const docQuery = auth.user.role === 'admin'
+      ? { _id: documentId }
+      : { _id: documentId, userId: auth.user.id };
+    const doc = await DocumentModel.findOne(docQuery);
     if (!doc) return NextResponse.json({ message: 'Document not found' }, { status: 404 });
 
     const memoryStart = process.memoryUsage().heapUsed;

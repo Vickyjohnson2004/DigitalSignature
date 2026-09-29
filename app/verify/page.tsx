@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { Shell } from '../../components/Shell';
 import { RequireAuth } from '../../components/RequireAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiShield, FiCheckCircle, FiAlertTriangle, FiClock, FiHash } from 'react-icons/fi';
 
 export default function Verify() {
@@ -13,6 +13,8 @@ export default function Verify() {
       const { data } = await api.get('/signatures');
       return data.signatures;
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const docs = useQuery({
     queryKey: ['docs'],
@@ -20,12 +22,24 @@ export default function Verify() {
       const { data } = await api.get('/documents');
       return data.documents;
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const [signatureId, setSignatureId] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const s = p.get('sigId');
+      const d = p.get('docId');
+      if (s) setSignatureId(s);
+      if (d) setDocumentId(d);
+    }
+  }, []);
 
   async function verify() {
     setLoading(true);
