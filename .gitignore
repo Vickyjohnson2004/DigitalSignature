@@ -159,8 +159,9 @@ keys/
 generated-keys/
 
 # Signature test output
-signatures/
-generated-signatures/
+/signatures/
+!app/api/signatures/
+/generated-signatures/
 
 # Benchmark output generated locally
 benchmark-results/
