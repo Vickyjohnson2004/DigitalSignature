@@ -1,0 +1,14 @@
+DIGITAL ASSET TRANSFER & NONDISCLOSURE AGREEMENT
+
+This Agreement is entered into on this 29th day of September, 2026, by and between:
+Party A: Cryptographic Systems Inc., having its principal office at Suite 400, Tech Park.
+Party B: Global Verification Authority, having its registered office at Cyber Gateway.
+
+1. PURPOSE
+The parties agree to test, evaluate, and benchmark digital signature schemes including RSA-PSS, DSA, ECDSA, and Ed25519 for tamper-evident data integrity verification.
+
+2. INTEGRITY VERIFICATION
+Any alteration of even a single byte or bit of this text shall render the associated cryptographic signature invalid under all standard verification procedures.
+
+3. EXECUTION
+This document serves as standard test payload for digital signature benchmarking.

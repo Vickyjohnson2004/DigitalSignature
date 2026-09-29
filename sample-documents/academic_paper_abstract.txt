@@ -1,0 +1,8 @@
+TITLE: Comparative Performance Analysis of Digital Signature Schemes for Secure Document Verification
+
+ABSTRACT:
+Digital signatures form the bedrock of authentication, non-repudiation, and message integrity in modern computer systems. This study conducts a comparative empirical evaluation of four primary digital signature algorithms: RSA-PSS (2048-bit with Probabilistic Signature Scheme padding), DSA (2048-bit Digital Signature Algorithm), ECDSA (Elliptic Curve Digital Signature Algorithm using NIST P-256), and Ed25519 (Edwards-curve Digital Signature Algorithm).
+
+We measure signing latency, verification latency, and raw signature payload size across varying workloads. Our experimental analysis demonstrates that Ed25519 and ECDSA offer superior signature compactness and significantly accelerated signing throughput, whereas RSA-PSS exhibits asymmetric advantages in verification efficiency. The findings provide quantitative guidance for protocol designers choosing signature standards in cloud and embedded environments.
+
+KEYWORDS: RSA-PSS, ECDSA, Ed25519, DSA, Cryptographic Verification, Benchmark Analysis.
