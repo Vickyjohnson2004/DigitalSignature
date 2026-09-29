@@ -35,6 +35,14 @@ export default function Sign() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const d = p.get('docId');
+      if (d) setDocumentId(d);
+    }
+  }, []);
+
   async function sign() {
     setLoading(true);
     setResult(null);

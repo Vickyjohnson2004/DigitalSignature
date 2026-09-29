@@ -44,10 +44,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const allowed = /pdf|text|msword|officedocument|plain/.test(file.type) ||
-      /\.(pdf|txt|doc|docx)$/i.test(file.name);
+    const allowed =
+      /pdf|text|csv|json|xml|markdown|msword|officedocument|plain|octet-stream/.test(file.type) ||
+      /\.(pdf|txt|doc|docx|csv|json|xml|md|rtf|log)$/i.test(file.name);
     if (!allowed) {
-      return NextResponse.json({ message: 'Unsupported document type' }, { status: 415 });
+      return NextResponse.json(
+        { message: 'Unsupported document type. Supported: PDF, TXT, CSV, DOCX, JSON, XML, MD' },
+        { status: 415 }
+      );
     }
 
     const bytes = await file.arrayBuffer();

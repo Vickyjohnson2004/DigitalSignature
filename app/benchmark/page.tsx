@@ -78,6 +78,14 @@ export default function Benchmark() {
   const [lastResult, setLastResult] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const d = p.get('docId');
+      if (d) setDocumentId(d);
+    }
+  }, []);
+
   async function exportCsv() {
     setExporting(true);
     try {
