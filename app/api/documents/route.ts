@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectDb();
-    const docs = await DocumentModel.find({ userId: auth.user.id })
+    const query = auth.user.role === 'admin' ? {} : { userId: auth.user.id };
+    const docs = await DocumentModel.find(query)
       .select('-data')
       .sort({ createdAt: -1 })
       .limit(100);

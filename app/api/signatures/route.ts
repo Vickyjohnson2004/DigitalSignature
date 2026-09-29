@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectDb();
-    const signatures = await Signature.find({ userId: auth.user.id })
+    const query = auth.user.role === 'admin' ? {} : { userId: auth.user.id };
+    const signatures = await Signature.find(query)
       .select('-__v')
       .sort({ generatedAt: -1 })
       .limit(100);

@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectDb();
-    const rows = await Benchmark.find({ userId: auth.user.id }).sort({ benchmarkDate: -1 });
+    const query = auth.user.role === 'admin' ? {} : { userId: auth.user.id };
+    const rows = await Benchmark.find(query).sort({ benchmarkDate: -1 });
 
     const header =
       'algorithm,runs,signingTimeMs,verificationTimeMs,signatureSizeBytes,keySizeBytes,memoryUsageKb,benchmarkDate\n';

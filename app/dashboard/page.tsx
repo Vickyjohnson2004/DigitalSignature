@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import {
   FiFileText, FiPenTool, FiShield, FiActivity,
-  FiArrowRight, FiTrendingUp, FiCheckCircle, FiZap,
+  FiArrowRight, FiTrendingUp, FiCheckCircle, FiZap, FiRefreshCw,
 } from "react-icons/fi";
 
 const ALGO_COLORS: Record<string, string> = {
@@ -80,6 +80,8 @@ export default function Dashboard() {
       const { data } = await api.get("/dashboard");
       return data;
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const s = q.data?.stats || {};
   const rawBench = q.data?.recentBenchmarks || [];
@@ -121,10 +123,22 @@ export default function Dashboard() {
                 Monitor documents, signatures and empirical performance.
               </p>
             </div>
-            <Link href="/sign" className="btn btn-primary" style={{ flexShrink: 0 }}>
-              <FiPenTool size={15} />
-              Sign a document
-            </Link>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                onClick={() => q.refetch()}
+                disabled={q.isFetching}
+                className="btn btn-secondary"
+                style={{ fontSize: 13, padding: "8px 14px", cursor: q.isFetching ? "wait" : "pointer" }}
+                title="Refresh metrics from database"
+              >
+                <FiRefreshCw size={13} style={{ animation: q.isFetching ? "spin 0.8s linear infinite" : "none" }} />
+                {q.isFetching ? "Refreshing..." : "Refresh Stats"}
+              </button>
+              <Link href="/sign" className="btn btn-primary" style={{ flexShrink: 0 }}>
+                <FiPenTool size={15} />
+                Sign a document
+              </Link>
+            </div>
           </div>
 
           {/* Stat cards */}

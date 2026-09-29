@@ -13,16 +13,21 @@ export async function GET(request: NextRequest) {
   try {
     await connectDb();
     const uid = auth.user.id;
+    const query = auth.user.role === 'admin' ? {} : { userId: uid };
 
     const [documents, signatures, benchmarks, verifications, valid] = await Promise.all([
-      DocumentModel.countDocuments({ userId: uid }),
-      Signature.countDocuments({ userId: uid }),
-      Benchmark.countDocuments({ userId: uid }),
-      VerificationLog.countDocuments({ userId: uid }),
-      VerificationLog.countDocuments({ userId: uid, verificationStatus: 'Valid' }),
+      DocumentModel.countDocuments(query),
+      Signature.countDocuments(query),
+      Benchmark.countDocuments(query),
+      VerificationLog.countDocuments(query),
+      VerificationLog.countDocuments(
+        auth.user.role === 'admin'
+          ? { verificationStatus: 'Valid' }
+          : { userId: uid, verificationStatus: 'Valid' }
+      ),
     ]);
 
-    const recent = await Benchmark.find({ userId: uid })
+    const recent = await Benchmark.find(query)
       .sort({ benchmarkDate: -1 })
       .limit(20);
 
