@@ -34,6 +34,7 @@ export async function connectDb(): Promise<typeof mongoose> {
 
   if (!cache.promise) {
     cache.promise = mongoose.connect(uri, {
+      dbName: 'DigitalSignature',
       serverSelectionTimeoutMS: 8000,
       bufferCommands: false,
     });
