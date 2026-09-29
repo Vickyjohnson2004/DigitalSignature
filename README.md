@@ -1,94 +1,150 @@
 # DigitalSignature Suite
 
-A web application for comparing digital signature algorithms: RSA-PSS, DSA, ECDSA, and Ed25519, with verification performance analysis.
+A **fullstack Next.js** web application for comparing digital signature algorithms: RSA-PSS, DSA, ECDSA, and Ed25519, with verification performance analysis.
 
 ## Architecture
 
-- `frontend/` — Next.js + TypeScript + Tailwind UI
-- `backend/` — Express + TypeScript REST API + MongoDB + Node crypto
-- Algorithms: RSA-PSS, DSA, ECDSA, Ed25519
-- Auth: JWT access tokens, bcrypt password hashing, role-based admin protection
-- Operations: document upload, hashing, signing, verification, benchmark runs, dashboard, CSV export, and audit logs
+Single **Next.js 15** fullstack app — API routes and UI live together at the repository root.
 
-## Quick start
+- **Frontend** — Next.js 15 + TypeScript + Tailwind CSS
+- **Backend** — Next.js API Routes + MongoDB (Mongoose) + Node.js `crypto`
+- **Algorithms** — RSA-PSS, DSA, ECDSA, Ed25519
+- **Auth** — JWT access tokens, bcrypt password hashing, role-based admin protection
+- **Operations** — Document upload, hashing, signing, verification, benchmark runs, dashboard, CSV export, audit logs
 
-1. Install dependencies:
-   - `cd backend && npm install`
-   - `cd frontend && npm install`
-2. Start the backend:
-   - `cd backend && npm run dev`
-3. Start the frontend:
-   - `cd frontend && npm run dev`
-4. Open the app:
-   - Frontend: `http://localhost:3001` (or `http://localhost:3000` if free)
-   - Backend API: `http://localhost:4000`
+```
+/
+├── app/                  # Next.js pages + API routes
+│   ├── api/              # API route handlers (backend logic)
+│   │   ├── auth/         # login, register, me
+│   │   ├── admin/        # overview, users, audit-logs
+│   │   ├── documents/    # upload, download
+│   │   ├── signatures/   # sign, verify, list
+│   │   ├── benchmarks/   # run, list, export CSV
+│   │   ├── dashboard/    # stats
+│   │   └── algorithms/   # algorithm list
+│   ├── dashboard/
+│   ├── documents/
+│   ├── sign/
+│   ├── verify/
+│   ├── benchmark/
+│   ├── admin/
+│   ├── login/
+│   └── register/
+├── lib/
+│   ├── api.ts            # Axios client for browser-side requests
+│   └── server/           # Server-only utilities
+│       ├── auth.ts       # JWT helpers
+│       ├── db.ts         # MongoDB connection
+│       ├── crypto.ts     # DSA, ECDSA, RSA-PSS, Ed25519 implementations
+│       ├── audit.ts      # Audit log helper
+│       ├── env.ts        # Environment variable validation
+│       └── models/       # Mongoose models
+├── components/           # Shared React components
+├── scripts/
+│   └── seed.ts           # Admin account seeder
+├── .env.example          # Environment variable template
+└── package.json
+```
 
-## Seeded admin account
+## Quick Start
 
-- Email: `admin@example.com`
-- Password: `Admin12345!`
-- Seed command: `cd backend && npm run seed`
+### 1. Clone and install
 
-## Notes
+```bash
+git clone https://github.com/Vickyjohnson2004/DigitalSignature.git
+cd DigitalSignature
+npm install
+```
 
-- The project includes a local in-memory MongoDB fallback so it can run in environments without a reachable external MongoDB instance.
-- For production, replace the connection string and secret in `backend/.env` with real values.
-- Private keys are not persisted; signatures and public keys are stored as Base64 metadata.
+### 2. Configure environment variables
 
-## How the project works
+Copy `.env.example` to `.env.local` and fill in your values:
 
-This project is a full-stack digital signature comparison app built with a Node/Express backend and a Next.js frontend.
+```bash
+cp .env.example .env.local
+```
 
-### 1. User authentication
+Required variables in `.env.local`:
 
-- A user signs in through the frontend at `/login`.
-- The backend verifies the email and password and returns a JWT token.
-- That token is stored in local storage so protected pages can request data from the API.
-- The app redirects logged-in users to `/dashboard` automatically.
+```env
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/DigitalSignature?retryWrites=true&w=majority
+JWT_SECRET=your-long-random-secret-at-least-32-chars
+MAX_FILE_SIZE_MB=10
+NEXT_PUBLIC_API_URL=/api
+```
 
-### 2. Document workflow
+### 3. Seed the admin account
 
-- Users upload a document to the backend through the documents API.
-- The backend stores the document metadata and prepares it for signing or verification.
-- The document is hashed and processed using the selected cryptographic algorithm.
+```bash
+npm run seed
+```
 
-### 3. Signature generation
+### 4. Start the development server
 
-- A user chooses a signing algorithm such as RSA-PSS, DSA, ECDSA, or Ed25519.
-- The backend generates a digital signature using the selected key material and document hash.
-- Signature records are saved in MongoDB along with metadata such as date, user, algorithm, and document reference.
+```bash
+npm run dev
+```
 
-### 4. Signature verification
+Open **http://localhost:3000**
 
-- The system can verify whether a signature matches the original document and the public key.
-- Verification checks the signature against the document hash and confirms authenticity.
-- This helps compare how different algorithms behave under real validation conditions.
+## Admin credentials (after seeding)
 
-### 5. Benchmarks and analytics
+| Field    | Value               |
+|----------|---------------------|
+| Email    | admin@example.com   |
+| Password | Admin12345!         |
 
-- The app can run benchmark tests comparing signing and verification performance across algorithms.
-- Results are collected and displayed in the dashboard for analysis.
-- The admin section gives a higher-level view of system activity and usage.
+## Environment Variables Reference
 
-### 6. Backend architecture
+| Variable               | Required | Default | Description                          |
+|------------------------|----------|---------|--------------------------------------|
+| `MONGODB_URI`          | ✅       | —       | MongoDB connection string             |
+| `JWT_SECRET`           | ✅       | —       | JWT signing secret (min 16 chars)     |
+| `MAX_FILE_SIZE_MB`     | ❌       | `10`    | Max document upload size in MB        |
+| `NEXT_PUBLIC_API_URL`  | ❌       | `/api`  | API base URL (keep `/api` for local)  |
 
-- The backend exposes REST routes for authentication, documents, signatures, benchmarks, dashboard statistics, and admin actions.
-- MongoDB stores users, documents, signatures, audit logs, and benchmark data.
-- The app uses JWT authentication, bcrypt hashing, and schema validation to protect the API.
+## How It Works
 
-### 7. Frontend flow
+### User Authentication
+- Sign in at `/login` — JWT token returned and stored in `localStorage`
+- Protected pages redirect to `/login` if no valid token
 
-- The frontend is organized by pages like `/login`, `/dashboard`, `/documents`, `/sign`, `/verify`, `/benchmark`, and `/admin`.
-- The app uses route protection so only authenticated users can access protected screens.
-- Most of the UI is focused on interacting with the backend APIs and rendering comparison results.
+### Document Workflow
+- Upload documents (PDF, TXT, DOC, DOCX) via `/documents`
+- Files are SHA-256 hashed and stored in MongoDB
 
-## Production notes
+### Signature Generation
+- Choose a document + algorithm at `/sign`
+- Ephemeral key pair generated, document signed, public key and signature stored
+- Private key is **never persisted**
 
-Use HTTPS, a managed MongoDB instance, strong secrets, a reverse proxy, object storage for larger documents, and a queue/worker for long benchmark jobs. This project intentionally uses the Node crypto library for secure algorithm comparisons rather than custom cryptographic primitives.
+### Signature Verification
+- Select a signature and document at `/verify`
+- System checks document integrity (hash match) + cryptographic validity
 
-# Login
+### Benchmarks
+- Run controlled signing/verification loops at `/benchmark`
+- Compare algorithm performance — signing time, verification time, signature size
+- Export results as CSV
 
-Use:
+### Admin Console
+- System-wide stats, user list, and audit log at `/admin`
+- Requires admin role
 
-Email: admin@example.com
-Password: Admin12345!
+## Scripts
+
+| Command          | Description                             |
+|------------------|-----------------------------------------|
+| `npm run dev`    | Start development server (port 3000)    |
+| `npm run build`  | Build production bundle                 |
+| `npm run start`  | Start production server                 |
+| `npm run seed`   | Seed admin user into database           |
+| `npm run lint`   | Run ESLint                              |
+
+## Production Notes
+
+- Use HTTPS and a managed MongoDB Atlas instance
+- Set a strong random `JWT_SECRET` (32+ chars)
+- Use a reverse proxy (Nginx / Vercel) in front of the app
+- This project uses Node.js built-in `crypto` for all cryptographic operations — no third-party crypto libraries
