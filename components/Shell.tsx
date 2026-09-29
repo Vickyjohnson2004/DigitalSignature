@@ -13,6 +13,7 @@ import {
   FiUserCheck,
   FiMenu,
   FiX,
+  FiLock,
 } from "react-icons/fi";
 import { logout } from "../lib/api";
 
@@ -31,55 +32,39 @@ type User = {
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<User>({});
 
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("dss_user");
-
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
+      if (storedUser) setUser(JSON.parse(storedUser));
     } catch {
       setUser({});
     }
   }, []);
 
-  // Close mobile sidebar whenever the route changes
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [path]);
+  useEffect(() => { setMobileOpen(false); }, [path]);
 
-  // Prevent body scrolling while mobile menu is open
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  const navigation = (
+  const avatar = user.fullName?.charAt(0)?.toUpperCase() || "U";
+
+  const NavLinks = () => (
     <nav className="space-y-1">
       {links.map(([href, label, Icon]) => {
         const active = path === href;
-
         return (
           <Link
             key={href}
             href={href}
-            className={`sidebar-link group transition-all duration-200 ${
-              active ? "active" : ""
-            }`}
+            className={`sidebar-link${active ? " active" : ""}`}
             onClick={() => setMobileOpen(false)}
           >
-            <Icon className="shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <Icon size={17} className="shrink-0" />
             <span>{label}</span>
           </Link>
         );
@@ -88,12 +73,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {user.role === "admin" && (
         <Link
           href="/admin"
-          className={`sidebar-link group transition-all duration-200 ${
-            path === "/admin" ? "active" : ""
-          }`}
+          className={`sidebar-link${path === "/admin" ? " active" : ""}`}
           onClick={() => setMobileOpen(false)}
         >
-          <FiUserCheck className="shrink-0 transition-transform duration-200 group-hover:scale-110" />
+          <FiUserCheck size={17} className="shrink-0" />
           <span>Admin</span>
         </Link>
       )}
@@ -101,149 +84,288 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Desktop Sidebar */}{" "}
-      <aside className="hidden md:flex w-64 lg:w-72 bg-white border-r border-slate-200 p-5 lg:p-6 flex-col shrink-0">
-        {" "}
+    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg)" }}>
+      {/* ── Desktop Sidebar ── */}
+      <aside
+        className="hidden md:flex"
+        style={{
+          width: 240,
+          flexShrink: 0,
+          flexDirection: "column",
+          background: "var(--bg-2)",
+          borderRight: "1px solid var(--border)",
+          padding: "20px 14px",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflowY: "auto",
+        }}
+      >
+        {/* Logo */}
         <Link
           href="/dashboard"
-          className="font-black text-xl lg:text-2xl mb-8 text-indigo-600 tracking-tight"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            textDecoration: "none",
+            marginBottom: 28,
+            padding: "0 6px",
+          }}
         >
-          DigitalSignature{" "}
-        </Link>
-        ```
-        {navigation}
-        <button
-          onClick={logout}
-          className="sidebar-link mt-auto text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
-        >
-          <FiLogOut className="shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
-          <span>Logout</span>
-        </button>
-      </aside>
-      {/* Mobile Backdrop */}
-      <div
-        className={`fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm md:hidden transition-all duration-300 ${
-          mobileOpen
-            ? "opacity-100 visible"
-            : "opacity-0 invisible pointer-events-none"
-        }`}
-        onClick={() => setMobileOpen(false)}
-        aria-hidden="true"
-      />
-      {/* Mobile Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-[82%] max-w-sm bg-white shadow-2xl md:hidden flex flex-col p-5 transition-transform duration-300 ease-out ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {/* Mobile Sidebar Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link
-            href="/dashboard"
-            className="font-black text-xl text-indigo-600 tracking-tight"
-            onClick={() => setMobileOpen(false)}
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 12px rgba(99,102,241,0.4)",
+              flexShrink: 0,
+            }}
           >
-            DigitalSignature
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 active:scale-95"
-            aria-label="Close navigation menu"
-          >
-            <FiX size={22} />
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="flex-1 overflow-y-auto">{navigation}</div>
-
-        {/* Mobile User Section */}
-        <div className="mt-5 pt-5 border-t border-slate-200">
-          <div className="flex items-center gap-3 mb-4 px-3">
-            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold shrink-0">
-              {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+            <FiLock size={16} color="#fff" />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: "var(--ink)", lineHeight: 1.2 }}>
+              DSS
             </div>
+            <div style={{ fontSize: 11, color: "var(--ink-3)", fontWeight: 500 }}>
+              Digital Signature
+            </div>
+          </div>
+        </Link>
 
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-slate-900 truncate">
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-3)", padding: "0 6px", marginBottom: 8 }}>
+          Navigation
+        </div>
+        <NavLinks />
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* User */}
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, marginTop: 14 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 10px",
+              borderRadius: 10,
+              background: "var(--surface)",
+              marginBottom: 8,
+            }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: 13,
+                color: "#fff",
+                flexShrink: 0,
+              }}
+            >
+              {avatar}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {user.fullName || "User"}
-              </p>
-
+              </div>
               {user.role && (
-                <p className="text-xs text-slate-500 capitalize truncate">
+                <div style={{ fontSize: 11, color: "var(--ink-3)", textTransform: "capitalize" }}>
                   {user.role}
-                </p>
+                </div>
               )}
             </div>
           </div>
 
           <button
             onClick={logout}
-            className="sidebar-link w-full text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+            className="sidebar-link"
+            style={{ color: "#fca5a5", width: "100%" }}
           >
-            <FiLogOut className="shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
+            <FiLogOut size={16} />
             <span>Logout</span>
           </button>
         </div>
       </aside>
-      {/* Main Content */}
-      <main className="flex-1 min-w-0">
-        {/* Responsive Header */}
-        <header className="sticky top-0 z-30 h-16 md:h-[68px] bg-white/95 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sm:px-5 md:px-8">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile Menu Button */}
+
+      {/* ── Mobile Backdrop ── */}
+      <div
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 40,
+          background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)",
+          display: mobileOpen ? "block" : "none",
+        }}
+      />
+
+      {/* ── Mobile Sidebar ── */}
+      <aside
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          zIndex: 50,
+          width: "82%",
+          maxWidth: 300,
+          background: "var(--bg-2)",
+          borderRight: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          padding: 20,
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+        }}
+        className="md:hidden"
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <Link href="/dashboard" onClick={() => setMobileOpen(false)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <FiLock size={14} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 15, color: "var(--ink)" }}>DSS</span>
+          </Link>
+          <button
+            onClick={() => setMobileOpen(false)}
+            style={{ width: 36, height: 36, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-hover)", border: "1px solid var(--border)", color: "var(--ink-2)", cursor: "pointer" }}
+          >
+            <FiX size={18} />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <NavLinks />
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", marginBottom: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, color: "#fff" }}>
+              {avatar}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)" }}>{user.fullName || "User"}</div>
+              {user.role && <div style={{ fontSize: 11, color: "var(--ink-3)", textTransform: "capitalize" }}>{user.role}</div>}
+            </div>
+          </div>
+          <button onClick={logout} className="sidebar-link" style={{ color: "#fca5a5", width: "100%" }}>
+            <FiLogOut size={16} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main ── */}
+      <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {/* Topbar */}
+        <header
+          style={{
+            height: 60,
+            background: "rgba(8,11,20,0.85)",
+            backdropFilter: "blur(16px)",
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 20px",
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <button
-              type="button"
               onClick={() => setMobileOpen(true)}
-              className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-200 active:scale-95"
-              aria-label="Open navigation menu"
-              aria-expanded={mobileOpen}
+              className="md:hidden"
+              aria-label="Open menu"
+              style={{
+                width: 36, height: 36, borderRadius: 9,
+                background: "var(--surface-hover)",
+                border: "1px solid var(--border)",
+                color: "var(--ink-2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
             >
-              <FiMenu size={22} />
+              <FiMenu size={18} />
             </button>
 
-            {/* Mobile Logo */}
-            <Link
-              href="/dashboard"
-              className="md:hidden font-black text-lg sm:text-xl text-indigo-600 truncate"
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 15,
+                color: "var(--ink)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
             >
-              DigitalSignature
-            </Link>
-
-            {/* Desktop Page Title */}
-            <div className="hidden md:block font-bold text-slate-900 truncate">
-              {links.find((x) => x[0] === path)?.[1] || "Administration"}
+              {links.find((x) => x[0] === path)?.[1] ||
+                (path === "/admin" ? "Administration" : "DigitalSignature Suite")}
             </div>
           </div>
 
-          {/* Desktop User */}
-          <div className="hidden sm:flex items-center gap-3 ml-4">
-            <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
-              {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 10,
+                padding: "6px 12px",
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  color: "#fff",
+                  flexShrink: 0,
+                }}
+              >
+                {avatar}
+              </div>
+              <div className="hidden sm:block" style={{ lineHeight: 1.25 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                  {user.fullName || "User"}
+                </div>
+                {user.role && (
+                  <div style={{ fontSize: 11, color: "var(--ink-3)", textTransform: "capitalize" }}>
+                    {user.role}
+                  </div>
+                )}
+              </div>
             </div>
-
-            <div className="hidden lg:block text-right max-w-[180px]">
-              <p className="text-sm font-semibold text-slate-900 truncate">
-                {user.fullName || "User"}
-              </p>
-
-              {user.role && (
-                <p className="text-xs text-slate-500 capitalize">{user.role}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Small Mobile User Avatar */}
-          <div className="sm:hidden w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
-            {user.fullName?.charAt(0)?.toUpperCase() || "U"}
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-5 md:p-8">
+        {/* Page content */}
+        <div style={{ flex: 1, padding: "28px 24px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
           {children}
         </div>
       </main>
