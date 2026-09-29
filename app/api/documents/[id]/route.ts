@@ -15,8 +15,10 @@ export async function DELETE(
   try {
     await connectDb();
     const { id } = await params;
-
-    const doc = await DocumentModel.findOne({ _id: id, userId: auth.user.id });
+    const docQuery = auth.user.role === 'admin'
+      ? { _id: id }
+      : { _id: id, userId: auth.user.id };
+    const doc = await DocumentModel.findOne(docQuery);
     if (!doc) {
       return NextResponse.json({ message: 'Document not found' }, { status: 404 });
     }

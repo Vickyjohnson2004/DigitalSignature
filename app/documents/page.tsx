@@ -17,6 +17,7 @@ import {
   FiCopy,
   FiCheck,
   FiZap,
+  FiRefreshCw,
 } from 'react-icons/fi';
 
 function formatBytes(b: number) {
@@ -84,6 +85,8 @@ export default function Documents() {
       const { data } = await api.get('/documents');
       return data.documents;
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const [file, setFile] = useState<File | null>(null);
@@ -168,14 +171,26 @@ export default function Documents() {
       <Shell>
         <div className="fade-in">
           {/* Header */}
-          <div style={{ marginBottom: 28 }}>
-            <div className="section-label" style={{ marginBottom: 6 }}>Payload Management</div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', lineHeight: 1.1 }}>
-              Documents
-            </h1>
-            <p style={{ color: 'var(--ink-2)', marginTop: 6, fontSize: 14 }}>
-              Upload source documents for cryptographic hashing (SHA-256), signing (RSA-PSS, DSA, ECDSA, Ed25519), and benchmark analysis.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+            <div>
+              <div className="section-label" style={{ marginBottom: 6 }}>Payload Management</div>
+              <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', lineHeight: 1.1 }}>
+                Documents
+              </h1>
+              <p style={{ color: 'var(--ink-2)', marginTop: 6, fontSize: 14 }}>
+                Upload source documents for cryptographic hashing (SHA-256), signing (RSA-PSS, DSA, ECDSA, Ed25519), and benchmark analysis.
+              </p>
+            </div>
+            <button
+              onClick={() => q.refetch()}
+              disabled={q.isFetching}
+              className="btn btn-secondary"
+              style={{ fontSize: 13, padding: '8px 14px', cursor: q.isFetching ? 'wait' : 'pointer' }}
+              title="Refresh documents list"
+            >
+              <FiRefreshCw size={13} style={{ animation: q.isFetching ? 'spin 0.8s linear infinite' : 'none' }} />
+              {q.isFetching ? 'Refreshing...' : 'Refresh Documents'}
+            </button>
           </div>
 
           {/* Feedback banner */}
