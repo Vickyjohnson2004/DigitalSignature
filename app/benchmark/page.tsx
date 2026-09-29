@@ -76,6 +76,26 @@ export default function Benchmark() {
   const [runs, setRuns] = useState(100);
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      const { data } = await api.get('/benchmarks/export.csv', { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `benchmarks_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'CSV export failed. Make sure you have benchmark data.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function run() {
     setLoading(true);
@@ -127,13 +147,15 @@ export default function Benchmark() {
                 Run controlled experiments and compare measurable performance.
               </p>
             </div>
-            <a
-              href={`${process.env.NEXT_PUBLIC_API_URL || '/api'}/benchmarks/export.csv`}
+            <button
+              onClick={exportCsv}
+              disabled={exporting}
               className="btn btn-secondary"
+              style={{ cursor: exporting ? 'wait' : 'pointer' }}
             >
               <FiDownload size={14} />
-              Export CSV
-            </a>
+              {exporting ? 'Exporting...' : 'Export CSV'}
+            </button>
           </div>
 
           {/* Run panel */}

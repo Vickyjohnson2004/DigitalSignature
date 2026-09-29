@@ -17,7 +17,15 @@ export function getClientIp(request: NextRequest): string | undefined {
 
 export function getAuthUser(request: NextRequest): AuthUser | null {
   const authHeader = request.headers.get('authorization');
-  const token = authHeader?.replace('Bearer ', '').trim();
+  let token = authHeader?.replace('Bearer ', '').trim();
+  if (!token) {
+    try {
+      const url = new URL(request.url);
+      token = url.searchParams.get('token')?.trim();
+    } catch {
+      // ignore
+    }
+  }
   if (!token) return null;
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string; role: string };
