@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       status,
+      algorithm: sig.algorithm,
       verificationTimeMs: result.verificationTime,
       documentHash: doc.fileHash,
       remarks,
@@ -78,3 +79,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
+
+export async function GET(request: NextRequest) {
+  const auth = requireAuth(request);
+  if ('error' in auth) return auth.error;
+
+  try {
+    await connectDb();
+    const query = auth.user.role === 'admin' ? {} : { userId: auth.user.id };
+    const logs = await VerificationLog.find(query)
+      .sort({ verifiedAt: -1 })
+      .limit(50);
+    return NextResponse.json({ verificationLogs: logs });
+  } catch (e) {
+    console.error('[verify GET logs]', e);
+    return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
+  }
+}
+
