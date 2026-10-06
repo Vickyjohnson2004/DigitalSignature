@@ -16,8 +16,11 @@ import {
   FiRefreshCw,
   FiAlertCircle,
   FiZap,
-  FiCheck,
   FiXCircle,
+  FiCopy,
+  FiCheck,
+  FiActivity,
+  FiKey,
 } from 'react-icons/fi';
 
 const ALGO_COLORS: Record<string, string> = {
@@ -65,6 +68,9 @@ export default function Verify() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedSig, setCopiedSig] = useState(false);
+  const [showKeyDetails, setShowKeyDetails] = useState(false);
 
   // Map of documentId -> Document object
   const docMap = (docs.data || []).reduce((acc: any, d: any) => {
@@ -72,6 +78,7 @@ export default function Verify() {
     return acc;
   }, {});
 
+  // URL query parameter parsing
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
@@ -82,7 +89,17 @@ export default function Verify() {
     }
   }, []);
 
-  // When signature changes, automatically select its source document if documentId not set or when selecting signature
+  // Auto-populate document if signature is pre-selected from URL
+  useEffect(() => {
+    if (signatureId && !documentId && sigs.data) {
+      const selected = sigs.data.find((s: any) => s._id === signatureId);
+      if (selected?.documentId) {
+        setDocumentId(selected.documentId);
+      }
+    }
+  }, [signatureId, sigs.data, documentId]);
+
+  // When signature selection changes, auto-select its source document
   function handleSignatureChange(id: string) {
     setSignatureId(id);
     setResult(null);
@@ -93,16 +110,20 @@ export default function Verify() {
     }
   }
 
-  async function handleVerify() {
+  async function handleVerify(simulateCorruption = false) {
     if (!signatureId || !documentId) {
-      setErrorMessage('Please select both a signature and a document to verify.');
+      setErrorMessage('Please select both a signature and a document payload.');
       return;
     }
     setLoading(true);
     setResult(null);
     setErrorMessage(null);
     try {
-      const { data } = await api.post('/signatures/verify', { signatureId, documentId });
+      const { data } = await api.post('/signatures/verify', {
+        signatureId,
+        documentId,
+        corruptSignature: simulateCorruption,
+      });
       setResult(data);
       qc.invalidateQueries({ queryKey: ['verify-logs'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -113,18 +134,51 @@ export default function Verify() {
     }
   }
 
+  function handleSimulateTamperedDoc() {
+    const selected = sigs.data?.find((s: any) => s._id === signatureId);
+    const alternative = docs.data?.find((d: any) => d._id !== selected?.documentId);
+    if (alternative) {
+      setDocumentId(alternative._id);
+      setResult(null);
+      setErrorMessage(null);
+    } else {
+      setErrorMessage('Please upload or generate at least two documents in Documents to test tamper comparison.');
+    }
+  }
+
+  function handleResetToAuthenticDoc() {
+    const selected = sigs.data?.find((s: any) => s._id === signatureId);
+    if (selected?.documentId) {
+      setDocumentId(selected.documentId);
+      setResult(null);
+      setErrorMessage(null);
+    }
+  }
+
   const selectedSig = sigs.data?.find((s: any) => s._id === signatureId);
   const selectedDoc = docs.data?.find((d: any) => d._id === documentId);
   const isDocTampered = selectedSig && selectedDoc && selectedSig.documentId !== selectedDoc._id;
   const isValid = result?.status === 'Valid';
   const isTampered = result?.status === 'Tampered';
 
+  // Compute average verification latencies across algorithms from log data
+  const algoBenchmarks = ['RSA-PSS', 'DSA', 'ECDSA', 'Ed25519'].map((algo) => {
+    const matchingLogs = (logs.data || []).filter(
+      (l: any) => l.signatureId?.algorithm === algo || l.remarks?.includes(algo)
+    );
+    const count = matchingLogs.length;
+    const avgTime = count > 0
+      ? matchingLogs.reduce((acc: number, l: any) => acc + (l.verificationTime || 0), 0) / count
+      : null;
+    return { algo, count, avgTime };
+  });
+
   return (
     <RequireAuth>
       <Shell>
         <div className="fade-in">
           {/* Header */}
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
             <div>
               <div className="section-label" style={{ marginBottom: 6 }}>Cryptographic Verification</div>
               <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)', lineHeight: 1.1 }}>
@@ -143,11 +197,42 @@ export default function Verify() {
               disabled={sigs.isFetching || docs.isFetching}
               className="btn btn-secondary"
               style={{ fontSize: 13, padding: '8px 14px' }}
-              title="Refresh signatures and documents"
+              title="Refresh signatures, documents, and logs"
             >
               <FiRefreshCw size={13} style={{ animation: sigs.isFetching ? 'spin 0.8s linear infinite' : 'none' }} />
               Refresh Data
             </button>
+          </div>
+
+          {/* Quick Algorithm Latency Benchmark Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
+            {algoBenchmarks.map(({ algo, count, avgTime }) => (
+              <div
+                key={algo}
+                className="card"
+                style={{
+                  padding: '14px 18px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderTop: `3px solid ${ALGO_COLORS[algo]}`,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: ALGO_COLORS[algo] }}>
+                    {algo}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                    {count} {count === 1 ? 'test' : 'tests'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)', fontFamily: "'JetBrains Mono', monospace" }}>
+                  {avgTime !== null ? `${avgTime.toFixed(3)} ms` : '—'}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                  Avg. Verification Latency
+                </div>
+              </div>
+            ))}
           </div>
 
           {errorMessage && (
@@ -171,8 +256,8 @@ export default function Verify() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.1fr) minmax(320px, 1.2fr)', gap: 24, alignItems: 'start', marginBottom: 28 }}>
-            {/* Parameters card */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.15fr) minmax(320px, 1.25fr)', gap: 24, alignItems: 'start', marginBottom: 28 }}>
+            {/* Verification Parameters card */}
             <div className="card" style={{ padding: 24 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FiShield size={15} style={{ color: 'var(--brand-light)' }} />
@@ -214,44 +299,113 @@ export default function Verify() {
                   <div
                     style={{
                       marginTop: 10,
-                      padding: '10px 12px',
+                      padding: '12px 14px',
                       borderRadius: 8,
                       background: 'var(--surface)',
                       border: '1px solid var(--border)',
                       fontSize: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: 8,
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink)' }}>
-                      <span
-                        style={{
-                          fontWeight: 800,
-                          fontSize: 11,
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                          background: (ALGO_COLORS[selectedSig.algorithm] || '#6366f1') + '22',
-                          color: ALGO_COLORS[selectedSig.algorithm] || '#6366f1',
-                          border: `1px solid ${ALGO_COLORS[selectedSig.algorithm] || '#6366f1'}44`,
-                        }}
-                      >
-                        {selectedSig.algorithm}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink)' }}>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 11,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            background: (ALGO_COLORS[selectedSig.algorithm] || '#6366f1') + '22',
+                            color: ALGO_COLORS[selectedSig.algorithm] || '#6366f1',
+                            border: `1px solid ${ALGO_COLORS[selectedSig.algorithm] || '#6366f1'}44`,
+                          }}
+                        >
+                          {selectedSig.algorithm}
+                        </span>
+                        <span style={{ color: 'var(--ink-2)' }}>Size: {selectedSig.signatureSize} bytes</span>
                       </span>
-                      <span style={{ color: 'var(--ink-2)' }}>Size: {selectedSig.signatureSize} bytes</span>
-                    </span>
-                    <span className="mono" style={{ color: 'var(--ink-3)', fontSize: 11 }}>
-                      Signed: {new Date(selectedSig.generatedAt).toLocaleDateString()}
-                    </span>
+                      <button
+                        onClick={() => setShowKeyDetails(!showKeyDetails)}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 11, padding: '4px 8px', height: 26 }}
+                      >
+                        <FiKey size={11} /> {showKeyDetails ? 'Hide Key' : 'Inspect Key'}
+                      </button>
+                    </div>
+
+                    {showKeyDetails && (
+                      <div className="fade-in" style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>Public Key (PEM)</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedSig.publicKey);
+                              setCopiedKey(true);
+                              setTimeout(() => setCopiedKey(false), 2000);
+                            }}
+                            className="btn btn-secondary"
+                            style={{ fontSize: 10, padding: '2px 6px', height: 22 }}
+                          >
+                            {copiedKey ? <FiCheck size={10} color="#10b981" /> : <FiCopy size={10} />}
+                            {copiedKey ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <pre
+                          className="mono"
+                          style={{
+                            fontSize: 10,
+                            background: 'var(--surface-raised)',
+                            padding: 8,
+                            borderRadius: 6,
+                            maxHeight: 90,
+                            overflowY: 'auto',
+                            color: 'var(--ink-2)',
+                            margin: 0,
+                          }}
+                        >
+                          {selectedSig.publicKey}
+                        </pre>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>Signature Value (Base64)</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedSig.signatureValue);
+                              setCopiedSig(true);
+                              setTimeout(() => setCopiedSig(false), 2000);
+                            }}
+                            className="btn btn-secondary"
+                            style={{ fontSize: 10, padding: '2px 6px', height: 22 }}
+                          >
+                            {copiedSig ? <FiCheck size={10} color="#10b981" /> : <FiCopy size={10} />}
+                            {copiedSig ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <pre
+                          className="mono"
+                          style={{
+                            fontSize: 10,
+                            background: 'var(--surface-raised)',
+                            padding: 8,
+                            borderRadius: 6,
+                            maxHeight: 60,
+                            overflowY: 'auto',
+                            wordBreak: 'break-all',
+                            whiteSpace: 'pre-wrap',
+                            color: 'var(--ink-2)',
+                            margin: 0,
+                          }}
+                        >
+                          {selectedSig.signatureValue}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Document selection */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Document to Validate Against
                   </label>
@@ -272,7 +426,7 @@ export default function Verify() {
                   style={{
                     width: '100%',
                     height: 44,
-                    borderColor: isDocTampered ? 'rgba(239, 68, 68, 0.4)' : undefined,
+                    borderColor: isDocTampered ? 'rgba(239, 68, 68, 0.5)' : undefined,
                   }}
                 >
                   <option value="">— Select document payload —</option>
@@ -295,6 +449,8 @@ export default function Verify() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 6,
                     }}
                   >
                     <span style={{ color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -308,10 +464,10 @@ export default function Verify() {
                 )}
               </div>
 
-              {/* Tamper testing guidance */}
+              {/* Tamper / Attack Simulation Buttons */}
               <div
                 style={{
-                  padding: '12px 14px',
+                  padding: '14px',
                   borderRadius: 10,
                   background: 'rgba(99, 102, 241, 0.05)',
                   border: '1px solid var(--border)',
@@ -321,17 +477,48 @@ export default function Verify() {
                   lineHeight: 1.5,
                 }}
               >
-                <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <FiZap size={13} style={{ color: 'var(--brand-light)' }} />
-                  Verification Logic
+                  Tamper & Integrity Simulation Test
                 </div>
-                The cryptographic engine evaluates the public key against the document hash. If you choose a different document than the one originally signed, the system will demonstrate tamper-evident detection.
+                <p style={{ margin: '0 0 10px 0', fontSize: 12, color: 'var(--ink-2)' }}>
+                  Test how the cryptographic engine verifies authentic data vs detects tampering or forged signatures:
+                </p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={handleResetToAuthenticDoc}
+                    disabled={!selectedSig || !isDocTampered}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 11, padding: '5px 10px', height: 28 }}
+                  >
+                    <FiCheck size={11} color="#10b981" /> Authentic Document
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSimulateTamperedDoc}
+                    disabled={!selectedSig || (docs.data?.length ?? 0) < 2}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 11, padding: '5px 10px', height: 28, color: '#f87171' }}
+                  >
+                    <FiAlertTriangle size={11} /> Simulate Tampered Doc
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVerify(true)}
+                    disabled={!signatureId || !documentId || loading}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 11, padding: '5px 10px', height: 28, color: '#f87171' }}
+                  >
+                    <FiXCircle size={11} /> Simulate Forged Signature
+                  </button>
+                </div>
               </div>
 
               <button
                 className="btn btn-primary"
                 disabled={!signatureId || !documentId || loading}
-                onClick={handleVerify}
+                onClick={() => handleVerify(false)}
                 style={{ width: '100%', height: 48, fontSize: 15, fontWeight: 700 }}
               >
                 {loading ? (
@@ -475,6 +662,8 @@ export default function Verify() {
 
               {logs.data?.map((l: any) => {
                 const isLValid = l.verificationStatus === 'Valid';
+                const isLTampered = l.verificationStatus === 'Tampered';
+                const logAlgo = l.signatureId?.algorithm;
                 return (
                   <div
                     key={l._id}
@@ -492,12 +681,31 @@ export default function Verify() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {isLValid ? (
                         <FiCheckCircle size={16} style={{ color: '#34d399', flexShrink: 0 }} />
+                      ) : isLTampered ? (
+                        <FiAlertTriangle size={16} style={{ color: '#fbbf24', flexShrink: 0 }} />
                       ) : (
-                        <FiAlertTriangle size={16} style={{ color: '#fca5a5', flexShrink: 0 }} />
+                        <FiXCircle size={16} style={{ color: '#fca5a5', flexShrink: 0 }} />
                       )}
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{l.remarks}</div>
-                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {logAlgo && (
+                            <span
+                              style={{
+                                fontWeight: 800,
+                                fontSize: 10,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: (ALGO_COLORS[logAlgo] || '#6366f1') + '22',
+                                color: ALGO_COLORS[logAlgo] || '#6366f1',
+                                border: `1px solid ${ALGO_COLORS[logAlgo] || '#6366f1'}44`,
+                              }}
+                            >
+                              {logAlgo}
+                            </span>
+                          )}
+                          <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{l.remarks}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>
                           {new Date(l.verifiedAt).toLocaleString()}
                         </div>
                       </div>
@@ -516,9 +724,19 @@ export default function Verify() {
                           fontWeight: 700,
                           padding: '3px 10px',
                           borderRadius: 20,
-                          background: isLValid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                          color: isLValid ? '#34d399' : '#fca5a5',
-                          border: `1px solid ${isLValid ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                          background: isLValid
+                            ? 'rgba(16, 185, 129, 0.15)'
+                            : isLTampered
+                            ? 'rgba(251, 191, 36, 0.15)'
+                            : 'rgba(239, 68, 68, 0.15)',
+                          color: isLValid ? '#34d399' : isLTampered ? '#fbbf24' : '#fca5a5',
+                          border: `1px solid ${
+                            isLValid
+                              ? 'rgba(16, 185, 129, 0.3)'
+                              : isLTampered
+                              ? 'rgba(251, 191, 36, 0.3)'
+                              : 'rgba(239, 68, 68, 0.3)'
+                          }`,
                         }}
                       >
                         {l.verificationStatus}

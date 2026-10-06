@@ -14,9 +14,10 @@ export async function POST(request: NextRequest) {
 
   try {
     await connectDb();
-    const { signatureId, documentId } = (await request.json()) as {
+    const { signatureId, documentId, corruptSignature } = (await request.json()) as {
       signatureId: string;
       documentId: string;
+      corruptSignature?: boolean;
     };
 
     if (!Types.ObjectId.isValid(signatureId) || !Types.ObjectId.isValid(documentId)) {
@@ -39,20 +40,35 @@ export async function POST(request: NextRequest) {
     const originalDoc = await DocumentModel.findById(sig.documentId);
     const integrity = doc.fileHash === originalDoc?.fileHash;
 
+    let sigBytes = Buffer.from(sig.signatureValue, 'base64');
+    if (corruptSignature && sigBytes.length > 0) {
+      const corrupted = Buffer.from(sigBytes);
+      corrupted[0] = corrupted[0] ^ 0xff;
+      sigBytes = corrupted;
+    }
+
     const result = verify(
       doc.data,
       sig.algorithm as Algorithm,
-      Buffer.from(sig.signatureValue, 'base64'),
+      sigBytes,
       sig.publicKey
     );
 
-    const status: string = !integrity ? 'Tampered' : result.valid ? 'Valid' : 'Invalid';
+    const status: string = corruptSignature
+      ? 'Invalid'
+      : !integrity
+      ? 'Tampered'
+      : result.valid
+      ? 'Valid'
+      : 'Invalid';
 
     const remarks =
       status === 'Valid'
         ? 'Signature and document verified successfully'
+        : corruptSignature
+        ? 'Cryptographic verification failed: signature bytes were corrupted/forged'
         : status === 'Tampered'
-        ? 'Document content differs from the signed document'
+        ? 'Document content differs from the signed document (hash mismatch)'
         : 'Signature does not match the supplied document';
 
     const log = await VerificationLog.create({
@@ -65,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     await audit(auth.user.id, 'VERIFY_SIGNATURE', 'VerificationLog', log.id, getClientIp(request), {
       status,
+      corruptSignature: !!corruptSignature,
     });
 
     return NextResponse.json({
@@ -88,6 +105,7 @@ export async function GET(request: NextRequest) {
     await connectDb();
     const query = auth.user.role === 'admin' ? {} : { userId: auth.user.id };
     const logs = await VerificationLog.find(query)
+      .populate({ path: 'signatureId', select: 'algorithm signatureSize documentId' })
       .sort({ verifiedAt: -1 })
       .limit(50);
     return NextResponse.json({ verificationLogs: logs });
